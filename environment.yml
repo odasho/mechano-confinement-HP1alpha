@@ -1,0 +1,51 @@
+# Create environment:
+#   conda env create --file environment.yml
+# Remove environment:
+#   conda remove --name mechanoconf --all
+
+
+name: mechanoconf
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python>=3.11
+  - pip
+  - cython
+  - conda-lock
+
+  # Standard scientific Python
+  - numpy
+  - matplotlib
+  - scipy
+  - pandas
+
+  - pip:
+
+    # Code quality
+    - pre-commit
+    - black
+    - isort
+    - ruff
+    - pytest
+
+    # Plotting
+    - seaborn
+
+    # Jupyter
+    - jupyterlab
+    - notebook
+    - jupyter-book
+    - jupytext
+    - "rich[jupyter]"
+
+    # ML and stats
+    - scikit-learn
+
+    # Imaging
+    - scikit-image
+
+    # Misc.
+    - tqdm
+    - watermark
