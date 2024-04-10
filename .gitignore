@@ -2,6 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,c++,python,macos,linux,latex,visualstudiocode,jupyternotebooks,cmake,matlab
 
 ### User defined ###
+dev/
 
 ### C ###
 # Prerequisites
