@@ -1,0 +1,232 @@
+###
+# Reference paper:
+# K. Kremer and G. S. Grest
+# Dynamics of entangled linear polymer melts: A molecular-dynamics simulation
+# J Chem Phys 92, 5057 (1990)
+###
+
+#
+# Box and units  (use LJ units and period boundaries)
+#
+
+units lj
+
+#atom_style bond #no stiffness
+atom_style angle #with stiffness
+
+boundary        p p p
+
+#
+# Pair interactions require lists of neighbours to be calculated
+#
+
+neighbor 3.0 bin
+neigh_modify every 1 delay 1 check yes
+
+### READ "start" data file ###
+read_data    final_O0.5.txt
+######################
+
+
+### READ "REstart" data file ###
+######################
+group wall type 1
+group chreps0 type 2
+group chreps0.5 type 3
+group chreps1.0 type 4
+group chreps1.5 type 5
+group chreps2.0 type 6
+group chreps2.5 type 7
+group chreps3.0 type 8
+group chreps3.5 type 9
+group chreps5.5 type 10
+group chreps6.0 type 11
+
+
+### reset timestep
+reset_timestep 0
+
+
+
+
+
+
+#
+# Dump configs - "simple dumpings"
+#
+
+#
+#
+dump    1       all    custom   5000000   test.dump.*  id  x y z  ix iy iz
+dump_modify     1 format line "%d %.5f %.5f %.5f %d %d %d"
+
+### Generate RESTART file, SPECIAL format, not a .txt file ###
+### Useful if simulation crashes ###
+restart 20000000 test_restart
+#############################
+
+#
+# Sample thermodynamic info  (temperature, energy, pressure)
+#
+thermo 20000000
+thermo_style   custom   step temp epair emol press pxx pyy pzz pxy pxz pyz vol
+
+###################################################################
+# Stiffness term
+# #
+# # E = K * (1+cos(theta)), K>0
+# #
+
+angle_style  cosine #It should avoids kinking (Ralf's suggestion)
+angle_coeff 1 1.0
+
+###################################################################
+
+#pair_style none
+
+###################################################################
+# Pair interaction between non-bonded atoms
+#
+#  Lennard-Jones 12-6 potential with cutoff:
+#  potential E=4epsilon[ (sigma/(r-delta))^12 - (sigma/(r-delta))^6]  for r < r_cut+delta
+#
+#  1.12246 = 2^(1/6) is the minimum of the potential
+
+pair_style      lj/cut 1.12246152962189
+
+#
+#  pair_modify shift yes adds a constant to the potential such
+#  that E(r_cut)=0. Forces remains unchanged.
+#
+
+pair_modify     shift yes
+
+#
+#  pair_coeff for lj/cut, specify 4:
+#    * atom type interacting with
+#    * atom type
+#    * epsilon (energy units)
+#    * sigma (distance units)
+pair_coeff      * * 1.0 1.0 1.12246152962189
+pair_coeff      1 2 1.0 1.5 1.68369299
+pair_coeff      1 3 1.0 1.5 1.68369299
+pair_coeff      1 4 1.0 1.5 1.68369299
+pair_coeff      1 5 1.0 1.5 1.68369299
+pair_coeff      1 6 1.0 1.5 1.68369299
+pair_coeff      1 7 1.0 1.5 1.68369299
+pair_coeff      1 8 1.0 1.5 1.68369299
+pair_coeff      1 9 1.0 1.5 1.68369299
+pair_coeff      1 10 1.0 1.5 1.68369299
+pair_coeff      1 11 1.0 1.5 1.68369299
+pair_coeff      3 4 0.75 1.0 2.5
+pair_coeff      3 5 1.0 1.0 2.5
+pair_coeff      3 6 1.25 1.0 2.5
+pair_coeff      3 7 1.50 1.0 2.5
+pair_coeff      3 8 1.75 1.0 2.5
+pair_coeff      3 9 2.0 1.0 2.5
+pair_coeff      3 10 3.0 1.0 2.5
+pair_coeff      3 11 3.5 1.0 2.5
+pair_coeff      4 5 1.25 1.0 2.5
+pair_coeff      4 6 1.5 1.0 2.5
+pair_coeff      4 7 1.75 1.0 2.5
+pair_coeff      4 8 2.0 1.0 2.5
+pair_coeff      4 9 2.25 1.0 2.5
+pair_coeff      4 10 3.25 1.0 2.5
+pair_coeff      4 11 3.75 1.0 2.5
+pair_coeff      5 6 1.75 1.0 2.5
+pair_coeff      5 7 2.0 1.0 2.5
+pair_coeff      5 8 2.25 1.0 2.5
+pair_coeff      5 9 2.5 1.0 2.5
+pair_coeff      5 10 3.5 1.0 2.5
+pair_coeff      5 11 4.0 1.0 2.5
+pair_coeff      6 7 2.25 1.0 2.5
+pair_coeff      6 8 2.5 1.0 2.5
+pair_coeff      6 9 2.75 1.0 2.5
+pair_coeff      6 10 3.75 1.0 2.5
+pair_coeff      6 11 4.25 1.0 2.5
+pair_coeff      7 8 2.75 1.0 2.5
+pair_coeff      7 9 3.0 1.0 2.5
+pair_coeff      7 10 4.0 1.0 2.5
+pair_coeff      7 11 4.5 1.0 2.5
+pair_coeff      8 9 3.25 1.0 2.5
+pair_coeff      8 10 4.25 1.0 2.5
+pair_coeff      8 11 4.75 1.0 2.5
+pair_coeff      9 10 4.5 1.0 2.5
+pair_coeff      9 11 5.0 1.0 2.5
+pair_coeff      10 11 6.0 1.0 2.5
+###################################################################
+# Pair interaction between non-bonded atoms
+#
+#  soft potential, for PUSHING apart overlapping atoms
+#  potential E=A*(1 + cos(pi*r/r_c))
+#
+#  1.12246 = 2^(1/6) is the cut-off r_c
+
+#pair_style     soft 1.12246152962189
+
+#
+#  pair_coeff for soft, specify 4:
+#    * atom type interacting with
+#    * atom type
+#    * A_start
+#    * A_stop
+#
+
+#pair_coeff * * 0.0
+#variable prefactor equal ramp(0,100)
+#fix 3 all adapt 1 pair soft a * * v_prefactor
+###################################################################
+
+###################################################################
+# Pair interaction between bonded atoms
+#
+# Fene potential + Lennard Jones 12-6:
+#
+#  E= - 0.5 K R0^2 ln[ 1- (r/R0)^2]
+#     + 4epsilon[ (sigma/r)^12 - (sigma/r)^6] + epsilon
+#
+
+bond_style      fene
+
+#
+# For style fene, specify:
+#   * bond type
+#   * K (energy/distance^2)
+#   * R0 (distance)
+#   * epsilon (energy)  (LJ component)
+#   * sigma (distance)  (LJ component)
+#
+
+bond_coeff      1       30.0     1.5     1.0       1.0
+
+special_bonds fene #<=== I M P O R T A N T (new command)
+
+
+###################################################
+
+#
+# Set up fixes
+#
+# use NVE ensemble
+# Langevin integrator Tstart Tstop 1/friction rndseed
+#
+#min_modify dmax 0.2
+fix 1 all nve #/limit 0.05  ###NVE ensemble
+#fix 1 all   nph   iso   0.01 0.01 2.0  ###NPH ensemble
+fix 2 all   langevin   1.0  1.0  2.0   33933
+fix 3 wall setforce 0.0 0.0 0.0
+#fix 4 pol_atom0   setforce 0. 0. 0. #for polymer thermalization
+
+
+#
+# set timestep of integrator
+#
+
+timestep 0.012
+
+#
+# run integration for a number of steps
+#
+run 20000000
+
+write_data test.restart.*
