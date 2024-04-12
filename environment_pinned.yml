@@ -1,0 +1,43 @@
+# Create environment:
+#   conda env create --file environment_pinned.yml
+# Remove environment:
+#   conda remove --name mechanoconf_pinned --all
+
+
+name: mechanoconf_pinned
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - pip=24.0
+
+  # Standard scientific Python
+  - numpy=1.26.4
+  - matplotlib=3.8.4
+  - scipy=1.13.0
+  - pandas=2.2.2
+
+  - pip:
+
+    # Code quality
+    - pre-commit==3.7.0
+    - black==24.3.0
+    - isort==5.13.2
+    - ruff==0.3.6
+
+    # Plotting
+    - seaborn==0.13.2
+
+    # Jupyter
+    - jupyterlab==4.1.6
+    - notebook==7.1.2
+
+    # ML and stats
+    - scikit-learn==1.4.2
+
+    # Imaging
+    - scikit-image==0.23.1
+    # Misc.
+    - watermark==2.4.3
