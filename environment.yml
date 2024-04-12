@@ -10,10 +10,8 @@ channels:
   - conda-forge
 
 dependencies:
-  - python>=3.11
+  - python=3.11
   - pip
-  - cython
-  - conda-lock
 
   # Standard scientific Python
   - numpy
@@ -28,7 +26,6 @@ dependencies:
     - black
     - isort
     - ruff
-    - pytest
 
     # Plotting
     - seaborn
@@ -36,9 +33,6 @@ dependencies:
     # Jupyter
     - jupyterlab
     - notebook
-    - jupyter-book
-    - jupytext
-    - "rich[jupyter]"
 
     # ML and stats
     - scikit-learn
@@ -47,5 +41,4 @@ dependencies:
     - scikit-image
 
     # Misc.
-    - tqdm
     - watermark
