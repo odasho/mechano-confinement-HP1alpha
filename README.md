@@ -13,9 +13,11 @@ Cells sense external physical cues through complex processes involving signaling
 
 ## Getting started
 
-`environment.yml` lists the dependencies of the `conda` environment used to run the code in this repository. Install the `conda` environment with the following command:
+`environment_pinned.yml` lists the dependencies (including version numbers) of the `conda` environment used to run the code in this repository. Install the `conda` environment with the following command:
 
-    $ conda env create --file environment.yml
+    $ conda env create --file environment_pinned.yml
+
+Molecular dynamics simulations were run with [LAMMPS](https://www.lammps.org/) version [2023-08-02](https://github.com/lammps/lammps/tree/stable_2Aug2023_update3).
 
 ## Citation
 
