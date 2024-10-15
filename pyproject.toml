@@ -1,3 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mechcell"
+version = "0.0.1"
+description = "Mechano confinement project"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = ['numpy']
+
 [tool.black]
 line-length = 120
 
