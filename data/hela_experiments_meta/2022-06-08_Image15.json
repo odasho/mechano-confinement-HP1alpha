@@ -1,0 +1,15 @@
+{
+    "image_file": "hela_experiment_images/2022-06-08_Image_14_z_stack_Airyscan_Processing_Confined.czi",
+    "cell_type": "HeLa",
+    "condition": "Confined",
+    "channel": 0,
+    "nucleus_threshold": 200,
+    "HP1_threshold": 700,
+    "view_zmin": 0,
+    "view_zmax": 76,
+    "view_xmin": 100,
+    "view_xmax": 900,
+    "view_ymin": 400,
+    "view_ymax": 1080,
+    "nucleus_closed": 5
+}
