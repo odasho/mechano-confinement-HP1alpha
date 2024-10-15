@@ -1,0 +1,15 @@
+{
+    "image_file": "imr90_experiment_images/2022-05-05_Image_7_z_stack_Airyscan_Processing_Confined.czi",
+    "cell_type": "IMR90",
+    "condition": "Confined",
+    "channel": 0,
+    "nucleus_threshold": 400,
+    "HP1_threshold": 2200,
+    "view_zmin": 0,
+    "view_zmax": 53,
+    "view_xmin": 400,
+    "view_xmax": 700,
+    "view_ymin": 300,
+    "view_ymax": 750,
+    "nucleus_closed": 6
+}
