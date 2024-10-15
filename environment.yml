@@ -12,6 +12,9 @@ channels:
 dependencies:
   - python=3.11
   - pip
+  - napari-plugin-engine
+  - pyclesperanto-prototype
+  - ocl_icd_wrapper_apple
 
   # Standard scientific Python
   - numpy
@@ -23,7 +26,7 @@ dependencies:
 
     # Code quality
     - pre-commit
-    - black
+    - "black[jupyter]"
     - isort
     - ruff
 
@@ -38,7 +41,18 @@ dependencies:
     - scikit-learn
 
     # Imaging
+    - aicsimageio
+    - czifile
+    - aicspylibczi>=3.0.5
     - scikit-image
+    - napari-skimage-regionprops
+    - napari-simpleitk-image-processing
+    - napari-pyclesperanto-assistant
+    - pyradiomics
+    - napari-laptrack
+
+    # Statistics
+    - statannotations
 
     # Misc.
     - watermark
