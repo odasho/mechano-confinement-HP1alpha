@@ -7,8 +7,6 @@ import tifffile
 from skimage.measure import label, regionprops
 from sklearn.decomposition import PCA
 
-# from skimage.morphology import label
-
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -77,17 +75,20 @@ def find_coordinates_arr(labeled_object):
 
     Returns
     -------
-    [[ z  y  x]] : array
-        Single array of z, y, x coordinates
+    array
+        Single array of [z, y, x] coordinates.
     """
 
     props = regionprops(labeled_object)
     coordinates = [prop.coords for prop in props]
 
-    # Combine z, y, and x arrays into a single array
-    coords = np.column_stack((coordinates[:, 0], coordinates[:, 1], coordinates[:, 2]))
+    all_coords = np.concatenate(coordinates)
 
-    return coords
+    return all_coords
+
+
+def scale_coordinates(coords, scaling_factors):
+    return [(scaling_factors[0] * z, scaling_factors[1] * y, scaling_factors[2] * x) for z, y, x in coords]
 
 
 def find_coordinates(labeled_object, one_object=True):
@@ -194,14 +195,6 @@ def axis_lengths(physical_coord, perc):
     -------
     rotocentered_physical_coord : [[z y x]] array
         Centralized and rototranslated coordinates around z, y, x axes
-    x_length : float
-        Major axis diameter of object
-    y_length : float
-        Intermediate axis diameter of object
-    z_length : float
-        Minor axis diameter of object
-    bbox : list
-        [x_min, x_max, y_min, y_max, z_min, z_max]
     x_length_adj : float
         Major axis adjusted diameter of object
     y_length_adj : float
@@ -227,25 +220,6 @@ def axis_lengths(physical_coord, perc):
     rotocentered_physical_coord = centered_physical_coord.copy()
     rotocentered_physical_coord[:, 0:2] = np.matmul(rotocentered_physical_coord[:, 0:2], np.transpose(pca.components_))
 
-    x_min = np.min(rotocentered_physical_coord[:, 0])
-    x_max = np.max(rotocentered_physical_coord[:, 0])
-
-    y_min = np.min(rotocentered_physical_coord[:, 1])
-    y_max = np.max(rotocentered_physical_coord[:, 1])
-
-    z_min = np.min(rotocentered_physical_coord[:, 2])
-    z_max = np.max(rotocentered_physical_coord[:, 2])
-
-    bbox = [x_min, x_max, y_min, y_max, z_min, z_max]
-
-    x_length = abs(x_min) + x_max
-    y_length = abs(y_min) + y_max
-    z_length = abs(z_min) + z_max
-
-    print("Major axis:", x_length)
-    print("Intermediate axis:", y_length)
-    print("Minor axis:", z_length)
-
     x_length_adj = np.percentile(rotocentered_physical_coord[:, 0], 100 - perc) - np.percentile(
         rotocentered_physical_coord[:, 0], perc
     )
@@ -256,14 +230,10 @@ def axis_lengths(physical_coord, perc):
         rotocentered_physical_coord[:, 2], perc
     )
 
-    print("Bounding box size along the x-axis:", x_length_adj)
-    print("Bounding box size along the y-axis:", y_length_adj)
-    print("Bounding box size along the z-axis:", z_length_adj)
-
-    return rotocentered_physical_coord, x_length, y_length, z_length, bbox, x_length_adj, y_length_adj, z_length_adj
+    return rotocentered_physical_coord, x_length_adj, y_length_adj, z_length_adj
 
 
-def lmbda_dist_out_from_center(lmbda, coord_nuc, centroid_nuc, labeled_nucleus, viewer):
+def lmbda_dist_out_from_center(lmbda, coord_nuc, centroid_nuc, labeled_nucleus):
     """
     A distance lambda from nucleus centroid to define a labeled inner shell object from the total nucleus object.
 
@@ -306,6 +276,23 @@ def lmbda_dist_out_from_center(lmbda, coord_nuc, centroid_nuc, labeled_nucleus, 
     coord_layer = find_coordinates(labeled, one_object=True)
 
     return labeled, coord_layer
+
+
+def distance(point1, point2):
+    """
+    Calculating the Euclidian distance between 2 points in 3D-space of z, x, y
+    Input example:
+
+    [(1.9019, 26.656, 27.097)],
+    [(2.2477, 30.233, 36.162)]
+
+    Output: their corresponding distance in um: 9.75
+    """
+    distance = np.sqrt(
+        (point1[0][0] - point2[0][0]) ** 2 + (point1[0][1] - point2[0][1]) ** 2 + (point1[0][2] - point2[0][2]) ** 2
+    )
+
+    return distance
 
 
 def append_to_column(dictionary, column_name, value):
