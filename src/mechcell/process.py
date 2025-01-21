@@ -17,7 +17,6 @@ from skimage.measure import label, regionprops
 
 from .utils import (
     axis_lengths,
-    distance,
     dotdict,
     find_coordinates,
     find_coordinates_arr,
@@ -28,6 +27,8 @@ from .utils import (
 
 @dataclass
 class Results:
+    """Dataclass for storing results of the image processing."""
+
     image_file: str = field(init=False, repr=False)
     cell_type: str = field(init=False, repr=False)
     condition: str = field(init=False, repr=False)
@@ -57,11 +58,51 @@ class Results:
     voxel_size_um3: float = field(init=False, repr=False)
 
     def dict(self):
+        """
+        Convert the data stored in this Results object to a dictionary.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all the attributes of the Results object.
+        """
         return {k: v for k, v in asdict(self).items()}
 
 
 class ProcessImage:
+    """
+    Process microscopy images and extract various properties of cellular structures.
+
+    Calling an instance of this class will execute the microscopy image
+    processing pipeline. Properties are extracted and displayed in a
+    3D viewer using napari.
+
+    Attributes
+    ----------
+    metadata : dict
+        Metadata of the image containing parameters for processing.
+    data_dir : Path
+        Path to the directory containing the image.
+    show_viewer : bool
+        Flag indicating whether to display the results in napari viewer.
+
+    Methods
+    -------
+    __call__():
+        Execute the image processing pipeline.
+    """
+
     def __init__(self, metadata, data_dir=None, show_viewer=False):
+        """
+        Parameters
+        ----------
+        metadata : dict
+            Metadata of the image containing parameters for processing.
+        data_dir : Path
+            Path to the directory containing the image.
+        show_viewer : bool, optional
+            Flag indicating whether to display the results in napari viewer.
+        """
 
         self._check_data_dir_path(data_dir)
 
@@ -74,6 +115,15 @@ class ProcessImage:
         self._show_viewer = show_viewer
 
     def __call__(self):
+        """
+        Executes the complete image processing pipeline.
+
+        Returns
+        -------
+        dict
+            A dictionary with results of the image processing.
+        """
+
         self._process_metadata()
 
         img_stack, scaling_factors = self._load_image()
@@ -119,7 +169,7 @@ class ProcessImage:
         if self._show_viewer:
             viewer = napari.Viewer()
 
-            # view image
+            # View image
             viewer.add_image(
                 img_stack,
                 colormap="green",
@@ -134,8 +184,7 @@ class ProcessImage:
                 visible=True,
             )
 
-            # view property
-
+            # View property
             viewer.add_labels(
                 labeled_HP1,
                 blending="additive",
@@ -226,6 +275,22 @@ class ProcessImage:
         return self._results.dict()
 
     def _check_data_dir_path(self, data_dir):
+        """
+        Validates the path to the data directory.
+
+        Parameters
+        ----------
+        data_dir : Path
+            Path to the directory containing the image.
+
+        Raises
+        ------
+        ValueError
+            If the path to the data directory with images is not provided.
+        TypeError
+            If the data directory path is not a pathlib.Path object.
+        """
+
         if data_dir is None:
             raise ValueError("The path to the data directory with images must be provided.")
 
@@ -233,11 +298,29 @@ class ProcessImage:
             raise TypeError("The path to the data directory must be provided as a pathlib.Path object.")
 
     def _process_metadata(self):
+        """Processes metadata and stores it in the results object."""
+
         self._results.image_file = self._metadata.image_file
         self._results.cell_type = self._metadata.cell_type
         self._results.condition = self._metadata.condition
 
     def _load_image(self):
+        """
+        Loads the image and scales it according to provided metadata.
+
+        Returns
+        -------
+        stacks : ndarray
+            A stack of image data.
+        scaling_factors : ndarray
+            An array of scaling factors for each dimension.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the specified image file does not exist.
+        """
+
         image_file = self._data_dir / self._metadata.image_file
 
         if not image_file.exists():
@@ -273,8 +356,24 @@ class ProcessImage:
         return stacks, scaling_factors
 
     def _apply_filters_and_threshold(self, stacks):
+        """
+        Applies gaussian blur and thresholds to the image stack.
+
+        Parameters
+        ----------
+        stacks : ndarray
+            A stack of image data.
+
+        Returns
+        -------
+        labeled_HP1 : ndarray
+            Labeled image with detected condensates.
+        labeled_nucleus_closed : ndarray
+            Labeled image with nucleus segmentation, closed to remove holes.
+        """
+
         # Apply Gaussian blur
-        blurred = cle.gaussian_blur(stacks, None, sigma_x=1, sigma_y=1, sigma_z=0)  # apply gaussian blur
+        blurred = cle.gaussian_blur(stacks, None, sigma_x=1, sigma_y=1, sigma_z=0)
 
         # Thresholding HP1a condensates
         binary_HP1 = cle.greater_constant(blurred, None, self._metadata.HP1_threshold)
@@ -288,7 +387,7 @@ class ProcessImage:
 
         # Labeling the nucleus
         labeled_DAPI_nucleus = cle.connected_components_labeling_box(binary_DAPI_nucleus)
-        # Exclude some smaller labels if we get more than one label for nucleus
+        # Exclude smaller labels to ensure one nucleus label
         labeled_DAPI_nucleus = cle.exclude_small_labels(labeled_DAPI_nucleus, None, 350000)
         labeled_nucleus = label(labeled_DAPI_nucleus)
 
@@ -299,6 +398,15 @@ class ProcessImage:
         return labeled_HP1, labeled_nucleus_closed
 
     def _extract_condensate_properties(self, labeled_image):
+        """
+        Extracts properties of labeled condensates.
+
+        Parameters
+        ----------
+        labeled_image : ndarray
+            Labeled image with detected condensates.
+        """
+
         labeled_image_sitk = sitk.GetImageFromArray(labeled_image.astype(int))
         shape_stats = sitk.LabelShapeStatisticsImageFilter()
         shape_stats.Execute(labeled_image_sitk)
@@ -311,6 +419,15 @@ class ProcessImage:
         self._results.voxels_condensates = voxels_condensates
 
     def _extract_nucleus_properties(self, labeled_image):
+        """
+        Extracts properties of labeled nucleus.
+
+        Parameters
+        ----------
+        labeled_image : ndarray
+            Labeled image with the nucleus segmented.
+        """
+
         labeled_image_sitk = sitk.GetImageFromArray(labeled_image.astype(int))
         shape_stats = sitk.LabelShapeStatisticsImageFilter()
         shape_stats.Execute(labeled_image_sitk)
@@ -327,6 +444,28 @@ class ProcessImage:
         self._results.sphericity = sphericity
 
     def _extract_axes_dimensions(self, labeled_HP1, labeled_nucleus_closed, scaling_factors):
+        """
+        Extracts axial dimensions of nucleus and condensates.
+
+        Parameters
+        ----------
+        labeled_HP1 : ndarray
+            Labeled image with detected condensates.
+        labeled_nucleus_closed : ndarray
+            Labeled image with closed nucleus segmentation.
+        scaling_factors : ndarray
+            Scaling factors for each dimension.
+
+        Returns
+        -------
+        nucleus_coord : ndarray
+            Coordinates of the nucleus.
+        x_length_nuc : float
+            Length of the major axis of the nucleus.
+        x_lengths_HP1 : list
+            Lengths of the major axes of the condensates.
+        """
+
         # Nucleus coordinates
         nucleus_coord = find_coordinates_arr(labeled_nucleus_closed)
         physical_coord_nucleus = nucleus_coord * scaling_factors
@@ -338,12 +477,14 @@ class ProcessImage:
         )
 
         # Extract condensates axes dimensions
-        coord_cond = find_coordinates(labeled_HP1, one_object=False)  # return res_lst from function
+        coord_cond = find_coordinates(labeled_HP1, one_object=False)
 
-        n = 3  # divide the list of coord_cond
+        # Divide the list of coord_cond
+        n = 3
         res_all = [coord_cond[i : i + n] for i in range(0, len(coord_cond), n)]
 
-        conds = []  # list with coordinates for all conds (each one is an element)
+        # List with coordinates for all conds (one condensate is an element in the list)
+        conds = []
 
         for i in range(len(res_all)):
             res = res_all[i]
@@ -386,6 +527,28 @@ class ProcessImage:
         return nucleus_coord, x_length_nuc, x_lengths_HP1
 
     def _extract_centroid(self, labeled_HP1, labeled_nucleus_closed, scaling_factors):
+        """
+        Extracts centroid of nucleus and condensates.
+
+        Parameters
+        ----------
+        labeled_HP1 : ndarray
+            Labeled image with detected condensates.
+        labeled_nucleus_closed : ndarray
+            Labeled image with closed nucleus segmentation.
+        scaling_factors : ndarray
+            Scaling factors for each dimension.
+
+        Returns
+        -------
+        centroid_nucleus : ndarray
+            Centroid of the nucleus.
+        physical_centroid_nucleus : ndarray
+            Physical centroid of the nucleus.
+        physical_centroid_conds_arr : ndarray
+            Physical centroids of the condensates.
+        """
+
         # Nucleus centroid
         stats_nucleus = regionprops(labeled_nucleus_closed)
         centroid_nucleus = np.array([s.centroid for s in stats_nucleus])
@@ -399,6 +562,28 @@ class ProcessImage:
         return centroid_nucleus, physical_centroid_nucleus, physical_centroid_conds_arr
 
     def _geometric_space(self, x_length_nuc, x_lengths_HP1, nucleus_coord, centroid_nucleus, labeled_nucleus_closed):
+        """
+        Defines the geometric space within the nucleus.
+
+        Parameters
+        ----------
+        x_length_nuc : float
+            Length of the major axis of the nucleus.
+        x_lengths_HP1 : list
+            Lengths of the major axes of the condensates.
+        nucleus_coord : ndarray
+            Coordinates of the nucleus.
+        centroid_nucleus : ndarray
+            Centroid of the nucleus.
+        labeled_nucleus_closed : ndarray
+            Labeled image with closed nucleus segmentation.
+
+        Returns
+        -------
+        coords_inner : list
+            Coordinates inner to the nucleus for each condensate.
+        """
+
         radius_nuc = x_length_nuc / 2
 
         coords_inner = []
@@ -407,12 +592,13 @@ class ProcessImage:
             radius_HP1 = i / 2
             ratio = radius_HP1 / radius_nuc
 
-            lmbda_inner = (
-                1 - ratio
-            )  # 1 defines the whole nucleus, subtracting the major axis ratio makes up the inner space within the nucleus for each condensate
+            # 1 defines the whole nucleus. Subtracting the major axis ratio
+            # makes up the inner space within the nucleus for each condensate
+            lmbda_inner = 1 - ratio
 
-            # Define labeled inner object based on this distance out from the nucleus centroid
-            labeled_inner, coord_inner = lmbda_dist_out_from_center(
+            # Define labeled inner object based on this distance out from the
+            # nucleus centroid
+            _, coord_inner = lmbda_dist_out_from_center(
                 lmbda_inner, nucleus_coord, centroid_nucleus, labeled_nucleus_closed
             )
 
@@ -421,12 +607,32 @@ class ProcessImage:
         return coords_inner
 
     def _define_nucleus_periphery(self, nucleus_coord, centroid_nucleus, labeled_nucleus_closed, scaling_factors):
+        """
+        Determines the periphery of the nucleus.
+
+        Parameters
+        ----------
+        nucleus_coord : ndarray
+            Coordinates of the nucleus.
+        centroid_nucleus : ndarray
+            Centroid of the nucleus.
+        labeled_nucleus_closed : ndarray
+            Labeled image with closed nucleus segmentation.
+        scaling_factors : ndarray
+            Scaling factors for each dimension.
+
+        Returns
+        -------
+        tuple
+            Arrays containing the coordinates of the periphery and its physical representation.
+        """
+
         lmbda_inner_nuc = 0.95  # Remaining nucleus thickness shell
         labeled_inner_nuc, coord_inner_nuc = lmbda_dist_out_from_center(
             lmbda_inner_nuc, nucleus_coord, centroid_nucleus, labeled_nucleus_closed
         )
 
-        periphery = cle.binary_subtract(labeled_nucleus_closed, labeled_inner_nuc)  # periphery object
+        periphery = cle.binary_subtract(labeled_nucleus_closed, labeled_inner_nuc)  # Defined periphery object
         periphery_coord_arr = np.array(find_coordinates(periphery))
         physical_periphery_arr = periphery_coord_arr * scaling_factors
 
@@ -435,14 +641,27 @@ class ProcessImage:
         return periphery_coord_arr, physical_periphery_arr
 
     def _sample_random_points(self, coords_inner, scaling_factors):
+        """
+        Randomly samples points within the inner space of the nucleus for each condensate.
+
+        Parameters
+        ----------
+        coords_inner : list
+            Coordinates of the inner space of the nucleus for each condensate.
+        scaling_factors : ndarray
+            Scaling factors for each dimension.
+
+        Returns
+        -------
+        physical_random_points_arr : ndarray
+            Physical coordinates of the randomly sampled points.
+        """
 
         physical_random_points = []
 
         for i in coords_inner:
             # Sample 1 random point in this inner space for each condensate
-            random_points_voxel = np.array(
-                random.choices(i, k=1)
-            )  # choose k number of random points, in this case 1, returns an array
+            random_points_voxel = np.array(random.choices(i, k=1))
             random_points_scaled = random_points_voxel * scaling_factors
             physical_random_points.append(random_points_scaled)
 
@@ -451,9 +670,21 @@ class ProcessImage:
         return physical_random_points_arr
 
     def _radial_distances(self, physical_random_points_arr, physical_centroid_nucleus, physical_centroid_conds_arr):
+        """
+        Computes radial distances of random points and condensates from the nucleus center.
 
-        dist_rp_r = []  # to store radial distances between random points to nucleus center
-        dist_cond_r = []  # to store radial distances between center of HP1a condensates to nucleus center
+        Parameters
+        ----------
+        physical_random_points_arr : ndarray
+            Physical coordinates of the randomly sampled points.
+        physical_centroid_nucleus : ndarray
+            Physical centroid of the nucleus.
+        physical_centroid_conds_arr : ndarray
+            Physical centroids of the condensates.
+        """
+
+        dist_rp_r = []  # To store radial distances between random points to nucleus center
+        dist_cond_r = []  # To store radial distances between center of HP1a condensates to nucleus center
 
         for i in physical_random_points_arr:
             dist_random_points = LA.norm([i] - physical_centroid_nucleus)  # Euclidian distance
@@ -469,38 +700,26 @@ class ProcessImage:
     def _min_peripheral_distances(
         self, physical_random_points_arr, physical_centroid_conds_arr, physical_periphery_arr
     ):
+        """
+        Computes minimal peripheral distances between points and the nucleus periphery.
 
-        min_dist_random_p = []  # to store minimum peripheral distances from random points
-        min_dist_conds_p = []  # to store minimum peripheral distances from HP1a condensate centers
+        Parameters
+        ----------
+        physical_random_points_arr : ndarray
+            Physical coordinates of the randomly sampled points.
+        physical_centroid_conds_arr : ndarray
+            Physical centroids of the condensates.
+        physical_periphery_arr : ndarray
+            Physical coordinates of the nucleus periphery.
 
-        # compute all distances from random point to all points on periphery
-        for i in physical_random_points_arr:
-            distances = []
-            for j in physical_periphery_arr:
-                dist = distance([i], [j])
-                distances.append(dist)
+        Returns
+        -------
+        coord_edge_p_random_points : ndarray
+            Closest periphery coordinates to random points.
+        coord_edge_p_cond : ndarray
+            Closest periphery coordinates to condensates.
+        """
 
-            # Compute the minimum distance of all distances between random point and periphery points
-            min_dist = min(distances)
-            min_dist_random_p.append(min_dist)
-
-        # compute all distances from HP1a centroids to all points on periphery
-        for i in physical_centroid_conds_arr:
-            distances = []
-            for j in physical_periphery_arr:
-                dist = distance([i], [j])
-                distances.append(dist)
-
-            # Compute the minimum distance of all distances between HP1a condensates and periphery points
-            min_dist = min(distances)
-            min_dist_conds_p.append(min_dist)
-
-        self._results.p_minimal_distance_random_points = min_dist_random_p
-        self._results.p_minimal_distance_condensates = min_dist_conds_p
-
-    def _min_peripheral_distances(
-        self, physical_random_points_arr, physical_centroid_conds_arr, physical_periphery_arr
-    ):
         # Compute all distances from random points and HP1a centroids to all points on periphery
         distances_random_to_periphery = cdist(physical_random_points_arr, physical_periphery_arr)
         distances_centroid_to_periphery = cdist(physical_centroid_conds_arr, physical_periphery_arr)
