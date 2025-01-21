@@ -9,7 +9,13 @@
 import importlib.metadata
 
 from .process import ProcessImage
+from .tracking import resolution_voxels, tracking_object, view_process_label_object
 
 __version__ = importlib.metadata.version(__package__)
 
-__all__ = [ProcessImage]
+__all__ = [
+    "ProcessImage",
+    "resolution_voxels",
+    "tracking_object",
+    "view_process_label_object",
+]
