@@ -4,8 +4,6 @@
 ### User defined ###
 dev/
 *czi
-!/data/hela_experiment_images/2022-05-31_Image_1_z_stack_Airyscan_Processing_NonConfined.czi
-!data/imr90_experiment_images/2021-11-25_Image_1_z_stack_Airyscan_Processing_NonConfined.czi
 dev.*
 
 ### C ###
