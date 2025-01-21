@@ -1,0 +1,2 @@
+See data/README.md for instructions on how to download image data.
+This directory is where the HeLa images should be stored.
