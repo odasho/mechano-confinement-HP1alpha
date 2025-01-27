@@ -10,6 +10,7 @@ import importlib.metadata
 
 from .process import ProcessImage
 from .tracking import resolution_voxels, tracking_object, view_process_label_object
+from .tracking_MSD import MSDAnalyzer, displacement
 
 __version__ = importlib.metadata.version(__package__)
 
@@ -18,4 +19,6 @@ __all__ = [
     "resolution_voxels",
     "tracking_object",
     "view_process_label_object",
+    "MSDAnalyzer",
+    "displacement",
 ]
