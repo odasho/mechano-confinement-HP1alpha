@@ -71,7 +71,7 @@ class Results:
 
 class ProcessImage:
     """
-    Process microscopy images and extract various properties of cellular structures.
+    Process microscopy images and extract various properties.
 
     Calling an instance of this class will execute the microscopy image
     processing pipeline. Properties are extracted and displayed in a
