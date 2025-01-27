@@ -1,5 +1,7 @@
 # Supplementary code for the paper: Nuclear mechano-confinement induces geometry-dependent HP1α condensate alterations
 
+[![DOI](https://zenodo.org/badge/784937400.svg)](https://doi.org/10.5281/zenodo.14747053)
+
 This repository contains supplementary code for the paper
 > Hovet, O., Nahali, N., Halaburkova, A., Haugen, L., Paulsen, J., Progida, C. 2024.
 > Nuclear mechano-confinement induces geometry-dependent HP1α condensate alterations
